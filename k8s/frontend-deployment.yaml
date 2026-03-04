@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: frontend
+  labels:
+    app: frontend
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels: 
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: IMAGE_FRONTEND
+          ports:
+            - containerPort: 8080
+          # Using individual env var with valueFrom
+          env: 
+            - name: BACKEND_URL
+              valueFrom: 
+                configMapKeyRef:
+                  name: kubecoin-config
+                  key: BACKEND_URL
+          # Resource constraints (Nginx is lightweight)
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+
+

@@ -1,0 +1,56 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kubecoin-db
+    environment:
+      POSTGRES_DB: kubecoin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    # Internal only - no external ports!
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend - Flask API (Internal Service)
+  backend:
+    build: ./backend
+    image: kubecoin-backend
+    container_name: kubecoin-backend
+    environment:
+      DB_HOST: postgres
+      DB_NAME: kubecoin
+      DB_USER: postgres
+      DB_PASSWORD: password
+    # Internal only - accessed via nginx reverse proxy
+    expose:
+      - "5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Frontend - React + Nginx (Gateway)
+  frontend:
+    build: ./frontend
+    image: kubecoin-frontend
+    container_name: kubecoin-frontend
+    environment:
+      # Backend service discovery via environment variable
+      BACKEND_URL: http://backend:5000
+    ports:
+      # Only the frontend is exposed externally
+      - "3000:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

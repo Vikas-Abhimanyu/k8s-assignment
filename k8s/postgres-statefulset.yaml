@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: postgres
+  labels:
+    app: postgres
+  namespace: dev
+spec:
+  serviceName: postgres-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels: 
+        app: postgres
+    spec:
+        containers:
+          - name: postgres
+            image: postgres:15-alpine
+            ports:
+              - containerPort: 5432
+            envFrom:
+              - configMapRef: 
+                  name : kubecoin-config
+              - secretRef:
+                  name: kubecoin-secrets
+            env:
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            # Resource constraints
+            resources:
+              requests:
+                memory: "200Mi"
+                cpu: "200m"
+              limits:
+                memory: "400Mi"
+                cpu: "300m"
+            volumeMounts:
+              - name: postgres-storage
+                mountPath: /var/lib/postgresql/data
+              - name: init-script
+                mountPath: /docker-entrypoint-initdb.d
+        volumes:
+          - name: postgres-storage
+            persistentVolumeClaim:
+              claimName: postgres-pvc
+          - name: init-script
+            configMap: 
+              name: postgres-init
