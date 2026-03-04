@@ -11,4 +11,4 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath: 
-    path: /data/postgres
+    path: /data/postgres/testing1

@@ -4,7 +4,7 @@ metadata:
   name: postgres-pvc
   labels:
     app: postgres
-  namespace: dev
+  namespace: testing
 spec:
   resources:
     requests:
