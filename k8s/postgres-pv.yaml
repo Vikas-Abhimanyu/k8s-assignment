@@ -4,6 +4,7 @@ metadata:
   name: postgres-pv
   labels:
     app: postgres
+    env: dev
 spec:
   capacity:
     storage: 1Gi
@@ -11,4 +12,4 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath: 
-    path: /data/postgres/dev
+    path: /data/postgres/dev1
