@@ -5,7 +5,7 @@ metadata:
   name: postgres-headless
   labels:
     app: postgres
-  namespace: dev
+  namespace: production
 spec:
   clusterIP: None
   selector:

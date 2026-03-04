@@ -4,7 +4,7 @@ metadata:
   name: postgres
   labels:
     app: postgres
-  namespace: dev
+  namespace: production
 spec:
   serviceName: postgres-headless
   replicas: 1

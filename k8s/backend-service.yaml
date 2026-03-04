@@ -4,7 +4,7 @@ metadata:
   name: backend-service
   labels:
     app: backend
-  namespace: dev
+  namespace: production
 spec:
   type: ClusterIP
   selector:

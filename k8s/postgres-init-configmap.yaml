@@ -4,7 +4,7 @@ metadata:
   name: postgres-init
   labels: 
     app: postgres
-  namespace: dev
+  namespace: production
 data:
   init.sql: | 
     -- Initialize KubeCoin database
