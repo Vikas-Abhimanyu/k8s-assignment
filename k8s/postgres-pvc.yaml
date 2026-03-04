@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata: 
-  name: postgres-pvc
+  name: postgres-pvc-production
   labels:
     app: postgres
     env: production
   namespace: production
 spec:
+  volumeName: postgres-pv-production
   resources:
     requests:
       storage: 1Gi
