@@ -71,14 +71,15 @@ pipeline {
                     usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh '''
                       echo "Updating Deployment.yaml with new image tags..."
-                      sed -i "s|image:.*backend.*|image: ${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
-                      sed -i "s|image:.*frontend.*|image: ${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
+                      sed -i "s|image:.*|image: ${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
+                      sed -i "s|image:.*|image: ${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
 
                       git config user.email "ci-bot@example.com"
                       git config user.name "CI Bot"
                       git add k8s/*.yaml
                       git commit -m "Update image tags to ${GIT_SHA}"
-                      git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/kubecoin-project.git HEAD:${BRANCH_NAME}
+                      git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/kubecoin-project.git HEAD:refs/heads/${BRANCH_NAME}
+
                     '''
                 }
             }
