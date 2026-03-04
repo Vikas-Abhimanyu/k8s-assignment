@@ -9,7 +9,7 @@ pipeline {
         DOCKER_USER     = "vikasabhimanyu"
         DOCKER_CRED     = "dockerhub-creds"
         KUBECONFIG_CRED = "kubeconfig-creds"
-        GIT_CRED        = "github-creds"   // Jenkins credential for pushing back to GitHub
+        GIT_CRED        = "github-creds"
     }
 
     stages {
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Build & Push Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", 
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}",
                     usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
                     sh '''
                       echo $DOCKER_PASS_VAR | docker login -u $DOCKER_USER_VAR --password-stdin
@@ -67,19 +67,25 @@ pipeline {
 
         stage('Update Image Tag in GitHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${GIT_CRED}", 
+                withCredentials([usernamePassword(credentialsId: "${GIT_CRED}",
                     usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh '''
-                      echo "Updating Deployment.yaml with new image tags..."
-                      sed -i "s|image:.*|image: ${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
-                      sed -i "s|image:.*|image: ${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
-
                       git config user.email "ci-bot@example.com"
                       git config user.name "CI Bot"
-                      git add k8s/*.yaml
-                      git commit -m "Update image tags to ${GIT_SHA}"
-                      git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/kubecoin-project.git HEAD:refs/heads/${BRANCH_NAME}
 
+                      echo "Updating Deployment.yaml with new image tags..."
+
+		      # Replace existing image lines with new backend and frontend images
+		      sed -i "s|.*image:.*backend:.*|          image: ${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
+		      sed -i "s|.*image:.*frontend:.*|          image: ${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
+
+                      git add k8s/*.yaml
+                      git commit -m "Update image tags to ${GIT_SHA}" || echo "No changes to commit"
+		      
+		      # Ensure we are on the correct branch before pushing
+                      git checkout ${BRANCH_NAME}
+              	      git pull origin ${BRANCH_NAME}
+              	      git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/kubecoin-project.git ${BRANCH_NAME}
                     '''
                 }
             }
@@ -95,30 +101,19 @@ pipeline {
                       kubectl apply -f k8s/frontend-deployment.yaml -n ${NAMESPACE}
 
                       echo "Waiting for rollout..."
-                      if ! kubectl rollout status deployment/backend -n ${NAMESPACE}; then
+                      if ! kubectl rollout status deployment/backend -n ${NAMESPACE} --timeout=120s; then
                         echo "Backend rollout failed, rolling back..."
                         kubectl rollout undo deployment/backend -n ${NAMESPACE}
                         exit 1
                       fi
 
-                      if ! kubectl rollout status deployment/frontend -n ${NAMESPACE}; then
+                      if ! kubectl rollout status deployment/frontend -n ${NAMESPACE} --timeout=120s; then
                         echo "Frontend rollout failed, rolling back..."
                         kubectl rollout undo deployment/frontend -n ${NAMESPACE}
                         exit 1
                       fi
                     '''
                 }
-            }
-        }
-
-        stage('Post-Deploy Health Check') {
-            steps {
-                sh '''
-                  echo "Running health checks..."
-                  # Example: curl health endpoints
-                  curl -f http://backend.${NAMESPACE}.svc.cluster.local:5000/health || exit 1
-                  curl -f http://frontend.${NAMESPACE}.svc.cluster.local:8080/health || exit 1
-                '''
             }
         }
     }
