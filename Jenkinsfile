@@ -3,6 +3,7 @@ pipeline {
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '5'))
+        disableConcurrentBuilds()
     }
 
     triggers {
@@ -17,6 +18,39 @@ pipeline {
     }
 
     stages {
+
+        stage('Skip CI Commit') {
+            steps {
+                script {
+                    def msg = sh(
+                        script: "git log -1 --pretty=%B",
+                        returnStdout: true
+                    ).trim()
+
+                    if (msg.contains("[skip ci]")) {
+                        echo "Skipping build triggered by Jenkins commit"
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+                }
+            }
+        }
+
+        stage('Skip Jenkins Commit') {
+            steps {
+                script {
+                    def author = sh(
+                        script: "git log -1 --pretty=%an",
+                        returnStdout: true
+                    ).trim()
+
+                    if (author == "jenkins") {
+                        currentBuild.result = 'NOT_BUILT'
+                        error("Commit created by Jenkins. Skipping pipeline.")
+                    }
+                }
+            }
+        }
 
         stage('Determine Environment') {
             steps {
@@ -83,7 +117,7 @@ pipeline {
                 ]) {
                     sh '''
                         git config user.email "ci-bot@example.com"
-                        git config user.name "CI Bot"
+                        git config user.name "jenkins"
 
                         git fetch origin
                         git checkout ${BRANCH_NAME}
@@ -93,9 +127,9 @@ pipeline {
                         sed -i "s|image: vikasabhimanyu/frontend:.*|image: ${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
 
                         git add k8s/*.yaml
-                        git commit -m "Update image tags to ${GIT_SHA}" || echo "No changes"
+                        git commit -m "Update image tags to ${GIT_SHA} [skip ci]" || echo "No changes"
 
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/k8s-assignment.git ${BRANCH_NAME} --force
+                        git push https://${GIT_USER}:${GIT_PASS}@github.com/Vikas-Abhimanyu/k8s-assignment.git ${BRANCH_NAME}
                     '''
                 }
             }
