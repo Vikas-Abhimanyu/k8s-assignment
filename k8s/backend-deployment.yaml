@@ -36,7 +36,7 @@ spec:
               memory: "64Mi"
       containers:
         - name: backend
-          image: vikasabhimanyu/backend:dev-0c1b36b
+          image: vikasabhimanyu/backend:dev-cd40ba2
           ports:
             - containerPort: 5000
           envFrom:
