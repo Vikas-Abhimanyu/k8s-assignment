@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: vikasabhimanyu/frontend:dev-6862843
+          image: vikasabhimanyu/frontend:dev-0c1b36b
           ports:
             - containerPort: 8080
           # Using individual env var with valueFrom
